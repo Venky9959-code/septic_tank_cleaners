@@ -5,12 +5,14 @@
 
 document.addEventListener('DOMContentLoaded', () => {
   initNavbar();
+  initHeroVideo();
   initCalculator();
   initLocalities();
   initServiceModals();
   initBookingForms();
   initStatsCounter();
   initVideoShowcase();
+  initTestimonialVideos();
   initHeroTextAnimation();
   initScrollReveals();
 });
@@ -607,12 +609,12 @@ function initHeroTextAnimation() {
   if (!dynamicElement) return;
 
   const phrases = [
-    "24/7 Mechanized Sanitation & Tankers in Hyderabad",
-    "30–45 Min Rapid Emergency Dispatch in Hyderabad",
-    "250-Bar High-Pressure Hydro-Jetting in Hyderabad",
-    "B1/B2/B3 Low-Clearance Basement Tankers in Hyderabad",
-    "Zero Manual Scavenging • 100% Suction in Hyderabad",
-    "Authorized GHMC Outside Disposal in Hyderabad"
+    "24/7 Septic Tank Cleaning in Hyderabad",
+    "Quick Tanker Arrival in 30–45 Mins",
+    "100% Machine Cleaning (Safe & Clean)",
+    "Starting from ₹2,000 per Trip",
+    "Fast Drain & Sewer Blockage Clearing",
+    "Clean & Safe Waste Disposal"
   ];
 
   let phraseIndex = 0;
@@ -651,3 +653,63 @@ function initHeroTextAnimation() {
   // Initial showcase pause before cycling starts
   setTimeout(tick, 2200);
 }
+
+/* --------------------------------------------------------------------------
+   10. HERO VIDEO BACKGROUND (FIRST 20 SECONDS SEAMLESS LOOP)
+   -------------------------------------------------------------------------- */
+function initHeroVideo() {
+  const heroVideo = document.getElementById('heroVideoBg');
+  if (!heroVideo) return;
+
+  heroVideo.muted = true;
+  heroVideo.playsInline = true;
+
+  // Seamlessly loop within the first 20 seconds
+  heroVideo.addEventListener('timeupdate', () => {
+    if (heroVideo.currentTime >= 20) {
+      heroVideo.currentTime = 0;
+      heroVideo.play().catch(() => {});
+    }
+  });
+
+  // Ensure autoplay starts without sound
+  const playPromise = heroVideo.play();
+  if (playPromise !== undefined) {
+    playPromise.catch(() => {
+      // Fallback: Autoplay prevented until user interaction
+      document.addEventListener('click', () => {
+        heroVideo.play().catch(() => {});
+      }, { once: true });
+    });
+  }
+}
+
+/* --------------------------------------------------------------------------
+   11. PERMANENTLY MUTED TESTIMONIAL / CLIENT REVIEW VIDEOS
+   -------------------------------------------------------------------------- */
+function initTestimonialVideos() {
+  const testimonialVideos = document.querySelectorAll('.video-reviews-section video');
+  if (!testimonialVideos.length) return;
+
+  testimonialVideos.forEach(video => {
+    // Permanently mute and zero volume
+    video.muted = true;
+    video.defaultMuted = true;
+    video.volume = 0;
+
+    // Intercept any play, volume change, or user unmuting attempts
+    const enforcePermanentMute = () => {
+      if (!video.muted || video.volume > 0) {
+        video.muted = true;
+        video.volume = 0;
+      }
+    };
+
+    ['volumechange', 'play', 'playing', 'loadedmetadata', 'canplay', 'timeupdate'].forEach(evt => {
+      video.addEventListener(evt, enforcePermanentMute);
+    });
+  });
+}
+
+
+
