@@ -15,6 +15,8 @@ document.addEventListener('DOMContentLoaded', () => {
   initTestimonialVideos();
   initHeroTextAnimation();
   initScrollReveals();
+  initLegalTOC();
+  initCookieConsent();
 });
 
 // Primary Phone & WhatsApp Number
@@ -29,13 +31,15 @@ function initNavbar() {
   const mobileToggle = document.getElementById('mobileToggle');
   const navMenu = document.getElementById('navMenu');
 
-  window.addEventListener('scroll', () => {
-    if (window.scrollY > 40) {
-      header.classList.add('scrolled');
-    } else {
-      header.classList.remove('scrolled');
-    }
-  });
+  if (header) {
+    window.addEventListener('scroll', () => {
+      if (window.scrollY > 40) {
+        header.classList.add('scrolled');
+      } else {
+        header.classList.remove('scrolled');
+      }
+    });
+  }
 
   if (mobileToggle && navMenu) {
     mobileToggle.addEventListener('click', () => {
@@ -711,5 +715,147 @@ function initTestimonialVideos() {
   });
 }
 
+/* --------------------------------------------------------------------------
+   12. LEGAL & POLICY PAGES TOC TRACKER
+   -------------------------------------------------------------------------- */
+function initLegalTOC() {
+  const tocLinks = document.querySelectorAll('.legal-toc .toc-link');
+  const sections = document.querySelectorAll('.legal-content .legal-card');
+  if (!tocLinks.length || !sections.length) return;
 
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const id = entry.target.getAttribute('id');
+        tocLinks.forEach(link => {
+          if (link.getAttribute('href') === `#${id}`) {
+            link.classList.add('active');
+            if (window.innerWidth <= 960) {
+              link.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+            }
+          } else {
+            link.classList.remove('active');
+          }
+        });
+      }
+    });
+  }, {
+    rootMargin: '-80px 0px -60% 0px',
+    threshold: 0.05
+  });
 
+  sections.forEach(sec => observer.observe(sec));
+}
+
+/* --------------------------------------------------------------------------
+   13. COOKIE CONSENT BANNER & PREFERENCE MANAGEMENT
+   -------------------------------------------------------------------------- */
+function initCookieConsent() {
+  const COOKIE_STORAGE_KEY = 'dial_a_septic_cookie_choice';
+  const savedChoice = localStorage.getItem(COOKIE_STORAGE_KEY);
+
+  // Update status widget on cookies.html if present
+  const statusEl = document.getElementById('cookieCurrentStatus');
+  const btnAcceptManual = document.getElementById('btnAcceptCookiesManual');
+  const btnRejectManual = document.getElementById('btnRejectCookiesManual');
+
+  function updateStatusDisplay() {
+    const current = localStorage.getItem(COOKIE_STORAGE_KEY);
+    if (statusEl) {
+      if (current === 'accepted') {
+        statusEl.textContent = 'Accepted (All Cookies Enabled)';
+        statusEl.style.color = 'var(--primary-brand)';
+      } else if (current === 'rejected') {
+        statusEl.textContent = 'Rejected (Essential Only)';
+        statusEl.style.color = 'var(--accent-highlight)';
+      } else {
+        statusEl.textContent = 'Not Set (Pending Choice)';
+        statusEl.style.color = 'var(--supporting-neutral)';
+      }
+    }
+  }
+
+  updateStatusDisplay();
+
+  if (btnAcceptManual) {
+    btnAcceptManual.addEventListener('click', () => {
+      localStorage.setItem(COOKIE_STORAGE_KEY, 'accepted');
+      updateStatusDisplay();
+      if (typeof showToast === 'function') {
+        showToast('✓ Cookie preference saved: All cookies accepted.');
+      }
+    });
+  }
+
+  if (btnRejectManual) {
+    btnRejectManual.addEventListener('click', () => {
+      localStorage.setItem(COOKIE_STORAGE_KEY, 'rejected');
+      updateStatusDisplay();
+      if (typeof showToast === 'function') {
+        showToast('✓ Cookie preference saved: Non-essential rejected.');
+      }
+    });
+  }
+
+  // If user already made a choice, do not show banner
+  if (savedChoice) {
+    return;
+  }
+
+  // Create and inject banner if not already in DOM
+  let banner = document.getElementById('cookieConsentBanner');
+  if (!banner) {
+    banner = document.createElement('div');
+    banner.id = 'cookieConsentBanner';
+    banner.className = 'cookie-consent-banner';
+    banner.innerHTML = `
+      <div class="cookie-consent-header">
+        <span class="cookie-consent-icon">🍪</span>
+        <h4 class="cookie-consent-title">We Value Your Privacy</h4>
+      </div>
+      <p class="cookie-consent-desc">
+        We use essential cookies to ensure rapid WhatsApp &amp; phone booking, and to analyze website performance. Read our <a href="cookies.html">Cookies Policy</a>.
+      </p>
+      <div class="cookie-consent-actions">
+        <button type="button" class="btn btn-primary btn-sm" id="btnAcceptCookies">
+          Accept Cookies
+        </button>
+        <button type="button" class="btn btn-outline btn-sm" id="btnRejectCookies">
+          Reject Non-Essential
+        </button>
+      </div>
+    `;
+    document.body.appendChild(banner);
+  }
+
+  // Slide banner in after slight delay
+  setTimeout(() => {
+    banner.classList.add('show');
+  }, 900);
+
+  // Bind Accept button
+  const acceptBtn = document.getElementById('btnAcceptCookies');
+  if (acceptBtn) {
+    acceptBtn.addEventListener('click', () => {
+      localStorage.setItem(COOKIE_STORAGE_KEY, 'accepted');
+      banner.classList.remove('show');
+      updateStatusDisplay();
+      if (typeof showToast === 'function') {
+        showToast('✓ Cookies accepted. Thank you!');
+      }
+    });
+  }
+
+  // Bind Reject button
+  const rejectBtn = document.getElementById('btnRejectCookies');
+  if (rejectBtn) {
+    rejectBtn.addEventListener('click', () => {
+      localStorage.setItem(COOKIE_STORAGE_KEY, 'rejected');
+      banner.classList.remove('show');
+      updateStatusDisplay();
+      if (typeof showToast === 'function') {
+        showToast('✓ Non-essential cookies rejected.');
+      }
+    });
+  }
+}
